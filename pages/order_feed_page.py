@@ -1,6 +1,8 @@
 from pages.base_page import BasePage
 from locators.locators import OrderFeedLocators
 import allure
+import time
+
 
 class OrderFeedPage(BasePage):
 
@@ -57,24 +59,41 @@ class OrderFeedPage(BasePage):
             return str(order_number)
 
     @allure.step('Ждать обновления счетчиков')
-    def wait_for_counters_update(self, initial_total, initial_today, timeout=10):
-        import time
-        start_time = time.time()
-        while time.time() - start_time < timeout:
+    def wait_for_counters_update(self, initial_total, initial_today, timeout=7, poll_interval=0.3):
+        """
+        Ждём, пока увеличится один из счетчиков:
+        - 'Выполнено за всё время'
+        - 'Выполнено за сегодня'
+
+        timeout — максимальное время ожидания (сек)
+        poll_interval — пауза между проверками (сек)
+        """
+        end_time = time.time() + timeout
+
+        while time.time() < end_time:
             current_total = self.get_total_orders_count()
             current_today = self.get_today_orders_count()
+
             if current_total > initial_total or current_today > initial_today:
                 return True
+
+            time.sleep(poll_interval)
+
         return False
 
     @allure.step('Ждать появления заказа в разделе "В работе"')
-    def wait_for_order_in_progress(self, order_number, timeout=15):
-        import time
+    def wait_for_order_in_progress(self, order_number, timeout=10, poll_interval=0.5):
+        """
+        Ждём, пока номер заказа появится в списке 'В работе'.
+        """
+        end_time = time.time() + timeout
         normalized_order = self.normalize_order_number(order_number)
-        start_time = time.time()
-        
-        while time.time() - start_time < timeout:
+
+        while time.time() < end_time:
             orders_in_progress = self.get_orders_in_progress_normalized()
             if normalized_order in orders_in_progress:
                 return True
+
+            time.sleep(poll_interval)
+
         return False

@@ -21,4 +21,4 @@ class Endpoints:
     CREATE_ORDER = 'api/orders'
     GET_ORDERS = 'api/orders'
     GET_USER_ORDERS = 'api/orders' 
-    GET_ALL_ORDERS = 'api/orders/all'
+    GET_ALL_ORDERS = 'api/orders/all' 

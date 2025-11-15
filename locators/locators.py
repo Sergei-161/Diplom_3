@@ -30,7 +30,7 @@ class MainPageLocators:
 class AuthPageLocators:
     """Форма авторизации"""
 
-    auth_form = (By.XPATH, ".//div[@class = 'Auth_login__3hAey']")                                   # Форма авторизации
+    auth_form = (By.XPATH, ".//div[@class = 'Auth_login__3hAey']")                                   # Форма авторизацииb
     email_input = (By.XPATH, ".//input[@name = 'name']")                                             # Поле ввода email
     password_input = (By.XPATH, ".//input[@name = 'Пароль']")                                        # Поле ввода пароля
     login_account_btn = (By.XPATH, "//button[text() = 'Войти']")                                     # Кнопка войти

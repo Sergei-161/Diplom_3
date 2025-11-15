@@ -1,7 +1,7 @@
 from faker import Faker
 
 class Person:
-    """Метод генерации данных для регистрации"""
+    """Метод генерации данных для регистрациии"""
 
     @staticmethod
     def create_data_correct_user():

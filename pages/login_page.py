@@ -3,6 +3,7 @@ from locators.locators import AuthPageLocators, MainPageLocators
 from data.urls import MainUrl, URLS
 import allure
 
+
 class LoginPage(BasePage):
 
     def __init__(self, driver):
@@ -16,15 +17,11 @@ class LoginPage(BasePage):
 
     @allure.step('Ввести email')
     def set_email(self, email):
-        email_field = self.wait_element_visible(AuthPageLocators.email_input)
-        email_field.clear()
-        email_field.send_keys(email)
+        self.enter_text(AuthPageLocators.email_input, email)
 
     @allure.step('Ввести пароль')
     def set_password(self, password):
-        password_field = self.wait_element_visible(AuthPageLocators.password_input)
-        password_field.clear()
-        password_field.send_keys(password)
+        self.enter_text(AuthPageLocators.password_input, password)
 
     @allure.step('Кликнуть на кнопку "Войти"')
     def click_login_button(self):
@@ -49,10 +46,12 @@ class LoginPage(BasePage):
             # Пробуем закрыть крестиком модального окна ингредиента
             if self.is_element_visible(MainPageLocators.close_ingredient_modal, timeout=1):
                 self.click_button(MainPageLocators.close_ingredient_modal)
-            
+
             # Пробуем закрыть через оверлей
             if self.is_element_visible(MainPageLocators.modal_overlay, timeout=1):
                 self.click_button(MainPageLocators.modal_overlay)
-                
-        except:
+
+        except Exception:
+            # Любые неожиданные ошибки при закрытии модалок игнорируем,
+            # чтобы не ронять тест, если модалки просто нет.
             pass

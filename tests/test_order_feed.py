@@ -125,7 +125,7 @@ class TestOrderFeed:
         normalized_order_number = order_feed_page.normalize_order_number(order_number)
         assert order_feed_page.wait_for_order_in_progress(normalized_order_number), f"Заказ {order_number} не появился в разделе 'В работе'"
         
-        # Дополнительная проверка - получаем текущие заказы и проверяем наличи
+        # Дополнительная проверка - получаем текущие заказы и проверяем наличие
         orders_in_progress_normalized = order_feed_page.get_orders_in_progress_normalized()
         
         assert normalized_order_number in orders_in_progress_normalized, (
