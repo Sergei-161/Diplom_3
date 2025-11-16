@@ -1,7 +1,6 @@
 from pages.base_page import BasePage
 from locators.locators import OrderFeedLocators
 import allure
-import time
 
 
 class OrderFeedPage(BasePage):
@@ -18,7 +17,7 @@ class OrderFeedPage(BasePage):
         try:
             counter = self.find_element(OrderFeedLocators.total_orders_counter)
             return int(counter.text) if counter.text else 0
-        except:
+        except Exception:
             return 0
 
     @allure.step('Получить значение счетчика "Выполнено за сегодня"')
@@ -26,7 +25,7 @@ class OrderFeedPage(BasePage):
         try:
             counter = self.find_element(OrderFeedLocators.dayly_orders_counter)
             return int(counter.text) if counter.text else 0
-        except:
+        except Exception:
             return 0
 
     @allure.step('Получить список номеров заказов в разделе "В работе"')
@@ -34,7 +33,7 @@ class OrderFeedPage(BasePage):
         try:
             orders_elements = self.find_elements(OrderFeedLocators.number_order_in_job)
             return [order.text for order in orders_elements if order.text]
-        except:
+        except Exception:
             return []
 
     @allure.step('Получить нормализованный список номеров заказов в разделе "В работе"')
@@ -47,7 +46,7 @@ class OrderFeedPage(BasePage):
                     # Убираем ведущие нули и преобразуем в число
                     normalized_orders.append(str(int(order.text)))
             return normalized_orders
-        except:
+        except Exception:
             return []
 
     @allure.step('Нормализовать номер заказа')
@@ -61,39 +60,45 @@ class OrderFeedPage(BasePage):
     @allure.step('Ждать обновления счетчиков')
     def wait_for_counters_update(self, initial_total, initial_today, timeout=7, poll_interval=0.3):
         """
-        Ждём, пока увеличится один из счетчиков:
-        - 'Выполнено за всё время'
-        - 'Выполнено за сегодня'
+        Ждём, пока увеличится нужный счётчик(и).
 
-        timeout — максимальное время ожидания (сек)
-        poll_interval — пауза между проверками (сек)
+        Логика:
+        - если initial_total > 0 и initial_today == 0  → следим только за total
+        - если initial_today > 0 и initial_total == 0  → следим только за today
+        - если оба > 0                                → достаточно роста любого
         """
-        end_time = time.time() + timeout
 
-        while time.time() < end_time:
+        def condition():
             current_total = self.get_total_orders_count()
             current_today = self.get_today_orders_count()
 
-            if current_total > initial_total or current_today > initial_today:
-                return True
+            cond_total = current_total > initial_total if initial_total else False
+            cond_today = current_today > initial_today if initial_today else False
 
-            time.sleep(poll_interval)
+            # Следим только за total
+            if initial_total and not initial_today:
+                return cond_total
 
-        return False
+            # Следим только за today
+            if initial_today and not initial_total:
+                return cond_today
+
+            # Следим за обоими (достаточно роста любого)
+            if initial_total and initial_today:
+                return cond_total or cond_today
+
+            # На случай, если вдруг оба 0 — fallback
+            return current_total > initial_total or current_today > initial_today
+
+        return self.wait_until(condition, timeout=timeout, poll_frequency=poll_interval)
 
     @allure.step('Ждать появления заказа в разделе "В работе"')
     def wait_for_order_in_progress(self, order_number, timeout=10, poll_interval=0.5):
-        """
-        Ждём, пока номер заказа появится в списке 'В работе'.
-        """
-        end_time = time.time() + timeout
+        """Ждём, пока номер заказа появится в списке 'В работе'."""
         normalized_order = self.normalize_order_number(order_number)
 
-        while time.time() < end_time:
+        def condition():
             orders_in_progress = self.get_orders_in_progress_normalized()
-            if normalized_order in orders_in_progress:
-                return True
+            return normalized_order in orders_in_progress
 
-            time.sleep(poll_interval)
-
-        return False
+        return self.wait_until(condition, timeout=timeout, poll_frequency=poll_interval)

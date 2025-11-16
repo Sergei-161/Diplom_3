@@ -2,8 +2,6 @@ from pages.base_page import BasePage
 from locators.locators import MainPageLocators
 from data.urls import MainUrl
 import allure
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
 
 
 class MainPage(BasePage):
@@ -75,14 +73,12 @@ class MainPage(BasePage):
             MainPageLocators.constructor_drop_area,
         )
 
-        # ждём, пока счётчик увеличится (если не увеличился — тест сам упадёт по assert)
-        try:
-            WebDriverWait(self.driver, 5).until(
-                lambda d: self.get_ingredient_counter() > initial
-            )
-        except Exception:
-            # не кидаем исключение здесь, чтобы сообщение об ошибке было из теста
-            pass
+        # ждём, пока счётчик увеличится (если не увеличился — тест упадёт по assert)
+        self.wait_until(
+            lambda: self.get_ingredient_counter() > initial,
+            timeout=5,
+            poll_frequency=0.5,
+        )
 
     @allure.step('Получить значение счетчика ингредиента')
     def get_ingredient_counter(self):
@@ -122,8 +118,8 @@ class MainPage(BasePage):
     def get_final_order_number(self, timeout=15):
         try:
             # Ждём, пока исчезнет «временный» номер (например, 9999)
-            WebDriverWait(self.driver, timeout).until(
-                EC.invisibility_of_element_located(MainPageLocators.order_number_loading)
+            self.wait_for_element_to_disappear(
+                MainPageLocators.order_number_loading, timeout=timeout
             )
             # затем ждём окончательный номер
             order_number_element = self.wait_element_visible(
@@ -136,16 +132,16 @@ class MainPage(BasePage):
     @allure.step('Создать заказ через UI и получить финальный номер')
     def create_order_ui(self):
         """Создать заказ через UI и вернуть финальный номер"""
-        # перетаскиваем ингредиент
+        # Перетаскиваем ингредиент в конструктор
         self.drag_ingredient_to_constructor()
 
-        # нажимаем кнопку оформления
+        # Нажимаем кнопку оформления заказа
         self.click_order_button()
 
-        # ждём финальный номер
+        # Ждём финальный номер
         order_number = self.get_final_order_number()
 
-        # закрываем модалку
+        # Закрываем модальное окно заказа
         self.close_order_modal()
 
         return order_number

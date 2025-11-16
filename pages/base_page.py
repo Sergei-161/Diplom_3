@@ -1,6 +1,7 @@
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver import ActionChains
+from selenium.common.exceptions import TimeoutException
 import allure
 
 
@@ -125,6 +126,21 @@ class BasePage:
         self.wait_element_visible(locator, timeout)
         self.wait_element_clickable(locator, timeout)
 
+    # =============== Универсальное ожидание условия ===============
+
+    @allure.step("Ждать выполнения произвольного условия")
+    def wait_until(self, condition, timeout=10, poll_frequency=0.5):
+        """
+        condition — функция без аргументов, возвращающая True, когда условие выполнено.
+        """
+        try:
+            WebDriverWait(self.driver, timeout, poll_frequency).until(
+                lambda d: condition()
+            )
+            return True
+        except TimeoutException:
+            return False
+
     # =============== Скролл / JS ===============
 
     @allure.step("Прокрутить к элементу")
@@ -158,16 +174,16 @@ class BasePage:
 
     @allure.step("Перетащить элемент в область")
     def drag_and_drop(self, source_locator, target_locator, timeout=10):
-        """
-        HTML5 drag&drop через DragEvent + DataTransfer.
-        Работает в Firefox и Chrome. При проблемах есть fallback.
-        """
+        """HTML5 drag&drop через DragEvent + DataTransfer."""
         source = self.wait_element_visible(source_locator, timeout)
         target = self.wait_element_visible(target_locator, timeout)
 
-        # на всякий случай — скроллим оба в видимую область
-        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", source)
-        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", target)
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", source
+        )
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", target
+        )
 
         script = """
         const source = arguments[0];
@@ -276,18 +292,24 @@ class BasePage:
         for _ in range(max_attempts):
             closed_any = False
 
-            # крестик модалки ингредиента
             try:
-                if self.is_element_visible(MainPageLocators.close_ingredient_modal, timeout=timeout):
-                    self.click_button(MainPageLocators.close_ingredient_modal, timeout=timeout)
+                if self.is_element_visible(
+                    MainPageLocators.close_ingredient_modal, timeout=timeout
+                ):
+                    self.click_button(
+                        MainPageLocators.close_ingredient_modal, timeout=timeout
+                    )
                     closed_any = True
             except Exception:
                 pass
 
-            # клик по оверлею
             try:
-                if self.is_element_visible(MainPageLocators.modal_overlay, timeout=timeout):
-                    self.click_button(MainPageLocators.modal_overlay, timeout=timeout)
+                if self.is_element_visible(
+                    MainPageLocators.modal_overlay, timeout=timeout
+                ):
+                    self.click_button(
+                        MainPageLocators.modal_overlay, timeout=timeout
+                    )
                     closed_any = True
             except Exception:
                 pass
